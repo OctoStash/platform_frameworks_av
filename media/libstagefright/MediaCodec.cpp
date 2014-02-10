@@ -749,10 +749,6 @@ void MediaCodec::onMessageReceived(const sp<AMessage> &msg) {
                             CHECK(msg->findInt32("width", &width));
                             CHECK(msg->findInt32("height", &height));
 
-                            int32_t cropLeft, cropTop, cropRight, cropBottom;
-                            CHECK(msg->findRect("crop",
-                                &cropLeft, &cropTop, &cropRight, &cropBottom));
-
                             int32_t colorFormat;
                             CHECK(msg->findInt32(
                                         "color-format", &colorFormat));
@@ -760,8 +756,6 @@ void MediaCodec::onMessageReceived(const sp<AMessage> &msg) {
                             sp<MetaData> meta = new MetaData;
                             meta->setInt32(kKeyWidth, width);
                             meta->setInt32(kKeyHeight, height);
-                            meta->setRect(kKeyCropRect,
-                                cropLeft, cropTop, cropRight, cropBottom);
                             meta->setInt32(kKeyColorFormat, colorFormat);
 
                             mSoftRenderer =

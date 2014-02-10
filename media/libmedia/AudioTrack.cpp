@@ -411,13 +411,12 @@ status_t AudioTrack::set(
         mAudioFlinger = audioFlinger;
         status_t status = NO_ERROR;
         mAudioDirectOutput = output;
-        mDirectClient = new DirectClient(this);
         mDirectTrack = audioFlinger->createDirectTrack( getpid(),
                                                         sampleRate,
                                                         channelMask,
                                                         mAudioDirectOutput,
                                                         &mSessionId,
-                                                        mDirectClient.get(),
+                                                        this,
                                                         streamType,
                                                         &status);
         if(status != NO_ERROR) {
@@ -500,10 +499,8 @@ uint32_t AudioTrack::latency() const
         uint32_t afLatency = 0;
         uint32_t newLatency = 0;
         AudioSystem::getLatency(mOutput, mStreamType, &afLatency);
-        if(0 != mSampleRate) {
-            newLatency = (mCblk == NULL) ? afLatency : (afLatency + (1000*mCblk->frameCount_) / mSampleRate);
-        } else {
-            newLatency = afLatency;
+        if (0 != mSampleRate){
+            newLatency = afLatency + (1000*mCblk->frameCount_) / mSampleRate;
         }
         ALOGV("latency() mLatency = %d, newLatency = %d", mLatency, newLatency);
         return newLatency;
@@ -1975,12 +1972,7 @@ status_t AudioTrack::dump(int fd, const Vector<String16>& args) const
 #ifdef QCOM_DIRECTTRACK
     uint32_t afLatency = 0;
     AudioSystem::getLatency(mOutput, mStreamType, &afLatency);
-    if(0 != mSampleRate) {
-        snprintf(buffer, 255, "  state(%d), latency (%d)\n", mState,
-                (mCblk == NULL) ? afLatency : (afLatency + (1000*mCblk->frameCount_) / mSampleRate));
-    } else {
-        snprintf(buffer, 255, "  state(%d), latency (%d)\n", mState, afLatency);
-    }
+    snprintf(buffer, 255, "  state(%d), latency (%d)\n", mState, afLatency + (1000*mCblk->frameCount_) / mSampleRate);
 #else
     snprintf(buffer, 255, "  state(%d), latency (%d)\n", mState, mLatency);
 #endif
@@ -2024,16 +2016,6 @@ status_t AudioTrack::getTimeStamp(uint64_t *tstamp) {
         ALOGE("Timestamp %lld ", *tstamp);
     }
     return NO_ERROR;
-}
-
-void AudioTrack::DirectClient::notify(int msg) {
-    sp<AudioTrack> track = mAudioTrack.promote();
-    if (track == 0) {
-        ALOGE("AudioTrack dead?");
-        return;
-    }
-
-    return track->notify(msg);
 }
 #endif
 

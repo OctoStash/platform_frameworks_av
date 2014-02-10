@@ -3179,8 +3179,15 @@ AudioFlinger::PlaybackThread::mixer_state AudioFlinger::MixerThread::prepareTrac
                 (mMixerStatusIgnoringFastTracks == MIXER_TRACKS_READY)) {
             minFrames = desiredFrames;
         }
-
-        size_t framesReady = track->framesReady();
+        // It's not safe to call framesReady() for a static buffer track, so assume it's ready
+        size_t framesReady;
+        if (track->sharedBuffer() == 0) {
+            framesReady = track->framesReady();
+        } else if (track->isStopped()) {
+            framesReady = 0;
+        } else {
+            framesReady = 1;
+        }
         if ((framesReady >= minFrames) && track->isReady() &&
                 !track->isPaused() && !track->isTerminated())
         {
@@ -4089,7 +4096,8 @@ AudioFlinger::OffloadThread::OffloadThread(const sp<AudioFlinger>& audioFlinger,
     :   DirectOutputThread(audioFlinger, output, id, device, OFFLOAD),
         mHwPaused(false),
         mFlushPending(false),
-        mPausedBytesRemaining(0)
+        mPausedBytesRemaining(0),
+        mPreviousTrack(NULL)
 {
     //FIXME: mStandby should be set to true by ThreadBase constructor
     mStandby = true;

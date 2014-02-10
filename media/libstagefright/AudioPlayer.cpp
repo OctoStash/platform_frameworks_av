@@ -779,7 +779,7 @@ int64_t AudioPlayer::getRealTimeUsLocked() const {
 
     diffUs -= mNumFramesPlayedSysTimeUs;
 
-    if((result + diffUs <= mPositionTimeRealUs) || (!mReachedEOS))
+    if(result + diffUs <= mPositionTimeRealUs)
         return result + diffUs;
     else
         return mPositionTimeRealUs;

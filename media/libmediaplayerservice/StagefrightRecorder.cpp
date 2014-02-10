@@ -23,7 +23,6 @@
 #endif
 #include "StagefrightRecorder.h"
 
-#include <binder/AppOpsManager.h>
 #include <binder/IPCThreadState.h>
 #include <binder/IServiceManager.h>
 
@@ -881,12 +880,6 @@ status_t StagefrightRecorder::start() {
 }
 
 sp<MediaSource> StagefrightRecorder::createAudioSource() {
-    // check record appop
-    if (mAppOpsManager.noteOp(AppOpsManager::OP_RECORD_AUDIO, mClientUid,
-            mClientName) != AppOpsManager::MODE_ALLOWED) {
-        return NULL;
-    }
-
 #ifdef QCOM_DIRECTTRACK
     bool tunneledSource = false;
     const char *tunnelMime;
@@ -1140,8 +1133,9 @@ status_t StagefrightRecorder::startRawAudioRecording() {
         mWriter->setMaxFileSize(mMaxFileSizeBytes);
     }
     mWriter->setListener(mListener);
-    status = mWriter->start();
-    return status;
+    mWriter->start();
+
+    return OK;
 }
 
 status_t StagefrightRecorder::startRTPRecording() {
